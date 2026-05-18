@@ -101,3 +101,73 @@ def get_user_by_id(request, pk):
 
     serializer = AppUserSerializer(user)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def calculate_calories(request):
+    user = get_user_from_request(request)
+    if not user:
+        return Response({"detail": "Oturum açmanız gerekmektedir."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    weight = user.weight if user.weight else 70.0
+    height = user.height if user.height else 170.0
+    age = user.age if user.age else 25
+    gender = user.gender.lower() if user.gender else 'male'
+    activity = user.activity_level.lower() if user.activity_level else 'moderate'
+    goal = user.goal.lower() if user.goal else 'maintain'
+
+    if 'female' in gender or 'kadın' in gender:
+        bmr = 10 * weight + 6.25 * height - 5 * age - 161
+    else:
+        bmr = 10 * weight + 6.25 * height - 5 * age + 5
+
+    activity_factors = {
+        'sedentary': 1.2,
+        'light': 1.375,
+        'moderate': 1.55,
+        'active': 1.725,
+        'very': 1.9
+    }
+    
+    factor = 1.375
+    for k, v in activity_factors.items():
+        if k in activity:
+            factor = v
+            break
+            
+    tdee = bmr * factor
+
+    if 'kilo' in goal or 'lose' in goal or 'zayıf' in goal:
+        target_calories = tdee - 500
+    elif 'kas' in goal or 'gain' in goal or 'hacim' in goal:
+        target_calories = tdee + 300
+    else:
+        target_calories = tdee
+
+    target_calories = max(1200.0, target_calories)
+
+    height_inches = (height - 152.4) / 2.54
+    if 'female' in gender or 'kadın' in gender:
+        ideal_w = 45.5 + (2.3 * max(0.0, height_inches))
+    else:
+        ideal_w = 50.0 + (2.3 * max(0.0, height_inches))
+
+    bmi = weight / ((height / 100) ** 2)
+
+    protein_g = weight * 2.0
+    fat_g = (target_calories * 0.25) / 9.0
+    carbs_g = (target_calories - (protein_g * 4 + fat_g * 9)) / 4.0
+
+    return Response({
+        "total_calories": float(round(target_calories, 1)),
+        "meals": {
+            "kahvalti": float(round(target_calories * 0.3, 1)),
+            "ogle": float(round(target_calories * 0.35, 1)),
+            "aksam": float(round(target_calories * 0.25, 1)),
+            "ara_ogun": float(round(target_calories * 0.1, 1))
+        },
+        "bke": float(round(bmi, 1)),
+        "ideal_weight": float(round(ideal_w, 1)),
+        "protein_need": float(round(protein_g, 1)),
+        "carbs_need": float(round(carbs_g, 1)),
+        "fat_need": float(round(fat_g, 1))
+    }, status=status.HTTP_200_OK)
