@@ -30,5 +30,5 @@ WORKDIR /app/diet_recommendation
 # 8. Expose port 8000
 EXPOSE 8000
 
-# 9. Start application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "diet_recommendation.wsgi:application"]
+# 9. Run migrations and start application using Gunicorn
+CMD ["sh", "-c", "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 diet_recommendation.wsgi:application"]
