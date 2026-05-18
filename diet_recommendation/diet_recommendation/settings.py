@@ -87,12 +87,8 @@ WSGI_APPLICATION = 'diet_recommendation.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'veritabani_adi',
-        'USER': 'kullanici_adi',
-        'PASSWORD': 'sifre',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
